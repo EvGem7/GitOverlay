@@ -71,18 +71,20 @@ class MainActivity : AppCompatActivity() {
         val gifFile = File(cacheDir, "input.gif")
         assets.open("input.gif").copyTo(gifFile.outputStream())
 
-        val outputFile = File(cacheDir, "out.mp4")
-        if (outputFile.exists()) {
-            outputFile.delete()
-        }
-        val outputPath = outputFile.absolutePath
+        val musicFile = getCacheFile("music.mp3")
+        assets.open("music.mp3").copyTo(musicFile.outputStream())
+
+        val noAudio = getCacheFile("noaudio.mp4").absolutePath
+        val output = getCacheFile("output.mp4").absolutePath
 
         setShowingView(ShowingView.PROGRESS)
         val start = System.currentTimeMillis()
         FFmpegThread.run {
-            val command = "-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $outputPath"
-            Log.d(TAG, "ffmpeg $command")
-            val rc = FFmpeg.execute(command)
+            val rc1 = FFmpeg.execute("-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $noAudio")
+            if (rc1 != RETURN_CODE_SUCCESS) {
+                return@run
+            }
+            val rc = FFmpeg.execute("-i $noAudio -i ${musicFile.absolutePath} -c copy -map 0:v:0 -map 1:a:0 $output")
             runOnUiThread {
                 Toast.makeText(
                     this,
@@ -95,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
-                videoView.setVideoPath(outputPath)
+                videoView.setVideoPath(output)
                 videoView.start()
             }
         }
@@ -113,6 +115,14 @@ class MainActivity : AppCompatActivity() {
         videoView.isVisible = showingView == ShowingView.VIDEO
         progressBar.isVisible = showingView == ShowingView.PROGRESS
         cropLayout.isVisible = showingView == ShowingView.CROP
+    }
+
+    private fun getCacheFile(name: String): File {
+        val outputFile = File(cacheDir, name)
+        if (outputFile.exists()) {
+            outputFile.delete()
+        }
+        return outputFile
     }
 
     private enum class ShowingView {
