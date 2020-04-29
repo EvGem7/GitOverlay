@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.MediaController
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
@@ -50,6 +51,10 @@ class MainActivity : AppCompatActivity() {
             setFixedAspectRatio(true)
             setAspectRatio(540, 960)
         }
+
+        val mediaController = MediaController(this)
+        mediaController.setAnchorView(videoView)
+        videoView.setMediaController(mediaController)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
