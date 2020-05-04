@@ -2,6 +2,7 @@ package com.flypika.gifoverlay
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -10,6 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
 import com.arthenica.mobileffmpeg.FFmpeg
+import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
@@ -38,9 +40,27 @@ class MainActivity : AppCompatActivity() {
         cropButton.setOnClickListener {
             cropImageView.getCroppedImageAsync()
         }
-        cropImageView.setOnCropImageCompleteListener { _, result ->
-            result.bitmap.compress(Bitmap.CompressFormat.PNG, 100, cachedImageFile.outputStream())
-            overlayImage()
+        cropImageView.apply {
+            setOnCropImageCompleteListener { _, result ->
+                result.bitmap.compress(
+                    Bitmap.CompressFormat.PNG,
+                    100,
+                    cachedImageFile.outputStream()
+                )
+                overlayImage()
+            }
+            setOnSetCropOverlayMovedListener {
+                overlayView.invalidate()
+            }
+            setOnSetCropOverlayReleasedListener {
+                overlayView.alwaysRedraw = true
+                postDelayed({
+                    overlayView.alwaysRedraw = false
+                }, 300L)
+            }
+            setOnSetImageUriCompleteListener { _, _, _ ->
+                overlayView.invalidate()
+            }
         }
     }
 
@@ -50,11 +70,17 @@ class MainActivity : AppCompatActivity() {
         cropImageView.apply {
             setFixedAspectRatio(true)
             setAspectRatio(540, 960)
+            guidelines = CropImageView.Guidelines.OFF
         }
 
         val mediaController = MediaController(this)
         mediaController.setAnchorView(videoView)
         videoView.setMediaController(mediaController)
+
+        overlayView.apply {
+            cropImageView = this@MainActivity.cropImageView
+            bitmap = BitmapFactory.decodeResource(resources, R.drawable.final_frame)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -80,11 +106,13 @@ class MainActivity : AppCompatActivity() {
         setShowingView(ShowingView.PROGRESS)
         val start = System.currentTimeMillis()
         FFmpegThread.run {
-            val rc1 = FFmpeg.execute("-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $noAudio")
+            val rc1 =
+                FFmpeg.execute("-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $noAudio")
             if (rc1 != RETURN_CODE_SUCCESS) {
                 return@run
             }
-            val rc = FFmpeg.execute("-i $noAudio -i ${musicFile.absolutePath} -c copy -map 0:v:0 -map 1:a:0 $output")
+            val rc =
+                FFmpeg.execute("-i $noAudio -i ${musicFile.absolutePath} -c copy -map 0:v:0 -map 1:a:0 $output")
             runOnUiThread {
                 Toast.makeText(
                     this,
@@ -114,7 +142,11 @@ class MainActivity : AppCompatActivity() {
     private fun setShowingView(showingView: ShowingView) {
         videoView.isVisible = showingView == ShowingView.VIDEO
         progressBar.isVisible = showingView == ShowingView.PROGRESS
-        cropLayout.isVisible = showingView == ShowingView.CROP
+
+        (showingView == ShowingView.CROP).let {
+            cropLayout.isVisible = it
+            overlayView.isVisible = it
+        }
     }
 
     private fun getCacheFile(name: String): File {
