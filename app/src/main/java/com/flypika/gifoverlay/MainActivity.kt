@@ -14,6 +14,7 @@ import com.arthenica.mobileffmpeg.FFmpeg
 import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
+import java.lang.IllegalArgumentException
 
 
 class MainActivity : AppCompatActivity() {
@@ -107,7 +108,13 @@ class MainActivity : AppCompatActivity() {
         val start = System.currentTimeMillis()
         FFmpegThread.run {
 //            val rc1 = FFmpeg.execute("-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $noAudio")
-            val rc1 = FFmpeg.execute("-loop 1 -t 3.5 -i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $noAudio")
+            val rc1 = FFmpeg.execute(
+                getNoAudioCommand(
+                    cachedImageFile.absolutePath,
+                    gifFile.absolutePath,
+                    noAudio
+                )
+            )
             if (rc1 != RETURN_CODE_SUCCESS) {
                 return@run
             }
@@ -130,6 +137,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun getNoAudioCommand(imagePath: String, gifPath: String, outputPath: String): String {
+        val arr = resources.getStringArray(R.array.effects)
+        val fadeIn = arr[0]
+        val zoomIn = arr[1]
+        val zoomOut = arr[2]
+        return when (effectsSpinner.selectedItem.toString()) {
+            fadeIn -> "-loop 1 -t 3.5 -i $imagePath -i $gifPath -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
+            zoomIn -> "-loop 1 -t 3.5 -i $imagePath -i $gifPath -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
+            zoomOut -> "-loop 1 -t 3.5 -i $imagePath -i $gifPath -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
+            else -> throw IllegalArgumentException()
+        }
+    }
+
 
     private fun onChooseClicked() {
         val intent = Intent().apply {
