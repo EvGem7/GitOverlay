@@ -8,4 +8,6 @@
         <item>Zoom In</item>
         <item>Zoom Out</item>
     </string-array>
+
+    <string name="share">Share</string>
 </resources>

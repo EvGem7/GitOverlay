@@ -12,10 +12,27 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <VideoView
-            android:id="@+id/videoView"
+        <LinearLayout
+            android:id="@+id/videoLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <VideoView
+                android:id="@+id/videoView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/shareButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:text="@string/share" />
+
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/progressBar"

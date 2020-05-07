@@ -3,18 +3,21 @@ package com.flypika.gifoverlay
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.MediaController
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ShareCompat
+import androidx.core.content.FileProvider
 import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
 import com.arthenica.mobileffmpeg.FFmpeg
 import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
-import java.lang.IllegalArgumentException
 
 
 class MainActivity : AppCompatActivity() {
@@ -26,10 +29,15 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var cachedImageFile: File
 
+    private lateinit var outputFile: File
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         cachedImageFile = File(cacheDir, "image")
+        outputFile = getCacheFile("output.mp4")
+
         initView()
         setListeners()
     }
@@ -62,6 +70,19 @@ class MainActivity : AppCompatActivity() {
             setOnSetImageUriCompleteListener { _, _, _ ->
                 overlayView.invalidate()
             }
+        }
+        shareButton.setOnClickListener {
+            val uri =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) FileProvider.getUriForFile(
+                    this,
+                    "$packageName.fileprovider",
+                    outputFile
+                ) else Uri.fromFile(outputFile)
+            ShareCompat.IntentBuilder.from(this)
+                .setStream(uri)
+                .setType("video/mp4")
+                .setChooserTitle("Share video...")
+                .startChooser();
         }
     }
 
@@ -102,7 +123,7 @@ class MainActivity : AppCompatActivity() {
         assets.open("music.mp3").copyTo(musicFile.outputStream())
 
         val noAudio = getCacheFile("noaudio.mp4").absolutePath
-        val output = getCacheFile("output.mp4").absolutePath
+        val output = outputFile.absolutePath
 
         setShowingView(ShowingView.PROGRESS)
         val start = System.currentTimeMillis()
@@ -161,7 +182,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setShowingView(showingView: ShowingView) {
-        videoView.isVisible = showingView == ShowingView.VIDEO
+        videoLayout.isVisible = showingView == ShowingView.VIDEO
         progressBar.isVisible = showingView == ShowingView.PROGRESS
 
         (showingView == ShowingView.CROP).let {
