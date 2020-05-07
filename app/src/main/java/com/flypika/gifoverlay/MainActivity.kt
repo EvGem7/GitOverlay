@@ -145,8 +145,8 @@ class MainActivity : AppCompatActivity() {
         val zoomOut = arr[2]
         return when (effectsSpinner.selectedItem.toString()) {
             fadeIn -> "-loop 1 -t 3.5 -i $imagePath -i $gifPath -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
-            zoomIn -> "-loop 1 -t 3.5 -i $imagePath -i $gifPath -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
-            zoomOut -> "-loop 1 -t 3.5 -i $imagePath -i $gifPath -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
+            zoomIn -> "-i $imagePath -i $gifPath -filter_complex \"scale=4000x4000,zoompan=z='if(gte(on, 25), 1 + (on-25)/(duration-25)*0.4)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=45:s=540x960,setsar=1[img];[img][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
+            zoomOut -> "-i $imagePath -i $gifPath -filter_complex \"scale=4000x4000,zoompan=z='2.25-on/duration*1.25':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=43:s=540x960,setsar=1[img];[img][1]overlay\" -c:v mpeg4 -qscale 0 $outputPath"
             else -> throw IllegalArgumentException()
         }
     }
