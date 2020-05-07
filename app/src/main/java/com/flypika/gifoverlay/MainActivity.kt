@@ -106,8 +106,8 @@ class MainActivity : AppCompatActivity() {
         setShowingView(ShowingView.PROGRESS)
         val start = System.currentTimeMillis()
         FFmpegThread.run {
-            val rc1 =
-                FFmpeg.execute("-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $noAudio")
+//            val rc1 = FFmpeg.execute("-i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex '[0:v]scale=540:h=960,setsar=1,overlay' -c:v mpeg4 -qscale 0 $noAudio")
+            val rc1 = FFmpeg.execute("-loop 1 -t 3.5 -i ${cachedImageFile.absolutePath} -i ${gifFile.absolutePath} -filter_complex \"[0:v]scale=540:h=960,setsar=1,format=rgba,fade=in:st=1:d=2.5[ovr];[ovr][1]overlay\" -c:v mpeg4 -qscale 0 $noAudio")
             if (rc1 != RETURN_CODE_SUCCESS) {
                 return@run
             }
